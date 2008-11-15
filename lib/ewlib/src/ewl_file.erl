@@ -50,6 +50,7 @@
 %% Include Files
 %%--------------------------------------------------------------------
 -include("eunit.hrl").
+-include_lib("kernel/include/file.hrl").
 
 %%====================================================================
 %% External functions
@@ -88,8 +89,7 @@ delete_dir(Path) ->
 copy_dir(From, To) ->
     case filelib:is_dir(From) of
 	false ->
-	    {ok, _} = file:copy(From, To),
-	    ok;
+	    ok = copy_file(From, To);
 	true ->
 	    case filelib:is_dir(To) of
 		true  -> ok;
@@ -99,6 +99,16 @@ copy_dir(From, To) ->
 				  copy_dir(ChildFrom, lists:flatten([To, "/", filename:basename(ChildFrom)]))
 			  end, filelib:wildcard(From ++ "/*"))
     end.
+
+%%--------------------------------------------------------------------
+%% @doc copy a file including timestamps,ownership and mode etc.
+%% @spec copy_file(From::string(), To::string()) -> ok | {error, Reason}
+%% @end
+%%--------------------------------------------------------------------
+copy_file(From, To) ->
+    {ok, _} = file:copy(From, To),
+    {ok, FileInfo} = file:read_file_info(From),
+    file:write_file_info(To, FileInfo).
 
 %%--------------------------------------------------------------------
 %% @doc create a unique temorory directory.
